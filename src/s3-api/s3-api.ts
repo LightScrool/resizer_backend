@@ -1,6 +1,9 @@
 import fs from 'fs';
-import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
-import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
+import {
+    S3Client,
+    PutObjectCommand,
+    DeleteObjectCommand,
+} from '@aws-sdk/client-s3';
 
 type ConstructorParams = {
     endpointUrl: string;
@@ -21,11 +24,15 @@ export class S3Api {
     declare s3Client: S3Client;
 
     constructor({
-        endpointUrl,
+        endpointUrl: endpointUrlParam,
         accessKeyId,
         secretAccessKey,
         bucketName,
     }: ConstructorParams) {
+        const endpointUrl = endpointUrlParam.endsWith('/')
+            ? endpointUrlParam.slice(0, -1)
+            : endpointUrlParam;
+
         this.endpointUrl = endpointUrl;
         this.bucketName = bucketName;
         this.s3Client = new S3Client({
@@ -39,16 +46,6 @@ export class S3Api {
     }
 
     async uploadFile({ fileName, filePath, contentType }: UploadFileParams) {
-        const extension = filePath.split('.').pop();
-
-        if (!extension) {
-            throw new Error('Failed to get file extension');
-        }
-
-        if (!checkIsAllowedExtension(extension)) {
-            throw new Error('Forbidden file extension');
-        }
-
         await this.s3Client.send(
             new PutObjectCommand({
                 Bucket: this.bucketName,
@@ -61,5 +58,28 @@ export class S3Api {
         return {
             fileUrl: `${this.endpointUrl}/${this.bucketName}/${fileName}`,
         };
+    }
+
+    async deleteFileByUrl(fileUrl: string) {
+        if (!fileUrl.startsWith(this.endpointUrl)) {
+            throw new Error('Trying to delete file with another endpointUrl');
+        }
+
+        const urlWoHost = fileUrl.slice(this.endpointUrl.length);
+
+        const regExpResult = /^\/([^/]+)\/(.+)$/.exec(urlWoHost);
+
+        if (!regExpResult || regExpResult.length != 3) {
+            throw new Error('Invalid url format');
+        }
+
+        const [_, bucketName, fileName] = regExpResult;
+
+        await this.s3Client.send(
+            new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: fileName,
+            }),
+        );
     }
 }
