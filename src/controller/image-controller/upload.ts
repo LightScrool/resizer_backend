@@ -1,5 +1,4 @@
 import { v4 as uuidV4 } from 'uuid';
-import fs from 'fs';
 import sharp from 'sharp';
 
 import { ApiError } from '~/errors/api-error';
@@ -12,6 +11,7 @@ import { getOuterImageUrl } from '~/helpers/get-outer-image-url';
 import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
 import { getContentType } from '~/helpers/get-content-type';
 import { getFileTempPath, getImageTempDirPath } from '~/helpers/temp-files';
+import { captureTempFile, clenupTempFile } from '~/helpers/temp-file-resources';
 
 export const upload = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -36,7 +36,7 @@ export const upload = withTryCatch(async (req, res) => {
         imageId = uuidV4();
     }
 
-    const [imageTempDirPath, cleanUpImageTempDir] = getImageTempDirPath({
+    const imageTempDirPath = getImageTempDirPath({
         projectAlias,
         imageId,
     });
@@ -46,6 +46,7 @@ export const upload = withTryCatch(async (req, res) => {
         presetAlias: ORIGINAL_PRESET_ALIAS,
         extension,
     });
+    await captureTempFile(originalFilePath);
 
     await file.mv(originalFilePath);
 
@@ -97,6 +98,7 @@ export const upload = withTryCatch(async (req, res) => {
             presetAlias: preset.alias,
             extension,
         });
+        await captureTempFile(currentFilePath);
 
         await sharp(originalFilePath)
             .resize(
@@ -123,11 +125,10 @@ export const upload = withTryCatch(async (req, res) => {
             link: fileUrl,
         }).save();
 
-        fs.rmSync(currentFilePath);
+        clenupTempFile(currentFilePath);
     });
 
     await Promise.all(handleResizeFunctions.map((fn) => fn()));
 
-    fs.rmSync(originalFilePath);
-    cleanUpImageTempDir();
+    clenupTempFile(originalFilePath);
 });

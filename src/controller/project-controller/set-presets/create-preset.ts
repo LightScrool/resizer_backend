@@ -9,6 +9,7 @@ import { getFileTempPath, getImageTempDirPath } from '~/helpers/temp-files';
 import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
 import { generateS3FileName } from '~/helpers/generate-s3-file-name';
 import { getContentType } from '~/helpers/get-content-type';
+import { captureTempFile, clenupTempFile } from '~/helpers/temp-file-resources';
 
 type Params = {
     projectAlias: string;
@@ -43,7 +44,7 @@ export const createPreset = async ({ projectAlias, preset }: Params) => {
             );
         }
 
-        const [imageTempDirPath, cleanUpImageTempDir] = getImageTempDirPath({
+        const imageTempDirPath = getImageTempDirPath({
             projectAlias,
             imageId: image.id,
         });
@@ -53,18 +54,22 @@ export const createPreset = async ({ projectAlias, preset }: Params) => {
             presetAlias: ORIGINAL_PRESET_ALIAS,
             extension,
         });
+        await captureTempFile(originalFilePath);
 
         // TODO: await in loop
-        await s3Api.downloadFileByUrl({
-            fileUrl: image.originalLink,
-            outputFilePath: originalFilePath,
-        });
+        if (!fs.existsSync(originalFilePath)) {
+            await s3Api.downloadFileByUrl({
+                fileUrl: image.originalLink,
+                outputFilePath: originalFilePath,
+            });
+        }
 
         const croppedFilePath = getFileTempPath({
             imageTempDirPath,
             presetAlias: preset.alias,
             extension,
         });
+        await captureTempFile(croppedFilePath);
 
         await sharp(originalFilePath)
             .resize(
@@ -93,8 +98,7 @@ export const createPreset = async ({ projectAlias, preset }: Params) => {
         }).save();
 
         // TODO race (один пресет удаляет originalFilePath, пока другому он ещё нужен)
-        fs.rmSync(originalFilePath);
-        fs.rmSync(croppedFilePath);
-        cleanUpImageTempDir();
+        clenupTempFile(originalFilePath);
+        clenupTempFile(croppedFilePath);
     }
 };

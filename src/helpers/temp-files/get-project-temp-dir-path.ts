@@ -14,13 +14,5 @@ export const getProjectTempDirPath = ({ projectAlias }: Params) => {
         fs.mkdirSync(result);
     }
 
-    const cleanUp = () => {
-        try {
-            fs.rmSync(result, { recursive: false, force: false });
-        } catch {
-            // Удаляем папку только если она пустая
-        }
-    };
-
-    return [result, cleanUp] as const;
+    return result;
 };

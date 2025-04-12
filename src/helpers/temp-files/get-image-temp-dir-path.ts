@@ -9,7 +9,7 @@ type Params = {
 };
 
 export const getImageTempDirPath = ({ projectAlias, imageId }: Params) => {
-    const [projectTempDirPath, cleanUpProjectTempDir] = getProjectTempDirPath({
+    const projectTempDirPath = getProjectTempDirPath({
         projectAlias,
     });
     const result = path.join(projectTempDirPath, imageId);
@@ -18,14 +18,5 @@ export const getImageTempDirPath = ({ projectAlias, imageId }: Params) => {
         fs.mkdirSync(result);
     }
 
-    const cleanUp = () => {
-        try {
-            fs.rmSync(result, { recursive: false, force: false });
-            cleanUpProjectTempDir();
-        } catch {
-            // Удаляем папку только если она пустая
-        }
-    };
-
-    return [result, cleanUp] as const;
+    return result;
 };
