@@ -61,12 +61,19 @@ export const upload = withTryCatch(async (req, res) => {
         contentType,
     });
 
+    const name: string | undefined =
+        typeof req.body.name === 'string' ? req.body.name : undefined;
+    const description: string | undefined =
+        typeof req.body.description === 'string'
+            ? req.body.description
+            : undefined;
+
     await new Image({
         id: imageId,
         ProjectAlias: projectAlias,
         originalLink: fileUrl,
-        name: req.body.name,
-        description: req.body.description,
+        name,
+        description,
     }).save();
 
     const imageUrl = getOuterImageUrl({
