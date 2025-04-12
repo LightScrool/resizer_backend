@@ -65,16 +65,13 @@ export const setPresets = withTryCatch(async (req, res) => {
         }
     }
 
-    const promises = [
-        ...presetsToDeleteAliases.map((presetAlias) =>
-            deletePreset({ projectAlias, presetAlias }),
-        ),
-        ...presetsToCreateAliases.map((presetAlias) =>
-            createPreset({ projectAlias, preset: newPresetsDict[presetAlias] }),
-        ),
-    ];
+    presetsToDeleteAliases.forEach((presetAlias) =>
+        deletePreset({ projectAlias, presetAlias }),
+    );
 
-    await Promise.all(promises);
+    presetsToCreateAliases.forEach((presetAlias) =>
+        createPreset({ projectAlias, preset: newPresetsDict[presetAlias] }),
+    );
 
     res.status(200).send();
 });
