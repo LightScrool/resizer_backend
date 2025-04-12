@@ -1,10 +1,11 @@
 import { v4 as uuidV4 } from 'uuid';
 import fs from 'fs';
 import path from 'path';
+import sharp from 'sharp';
 
 import { ApiError } from '~/errors/api-error';
 import { withTryCatch } from '~/helpers/with-try-catch';
-import { Image } from '~/models';
+import { Image, Preset, CroppedImage } from '~/models';
 import { getTempFilesDirName } from '~/helpers/get-temp-files-dir-name';
 import { ORIGINAL_PRESET_ALIAS } from '~/config';
 import { s3Api } from '~/s3-api';
@@ -36,11 +37,13 @@ export const upload = withTryCatch(async (req, res) => {
         imageId = uuidV4();
     }
 
-    const dirPath = path.join(getTempFilesDirName(), projectAlias, imageId);
-    fs.mkdirSync(dirPath, { recursive: true });
+    const projectTempDirPath = path.join(getTempFilesDirName(), projectAlias);
+    const imageTempDirPath = path.join(projectTempDirPath, imageId);
+
+    fs.mkdirSync(imageTempDirPath, { recursive: true });
 
     const originalFilePath = path.join(
-        dirPath,
+        imageTempDirPath,
         [ORIGINAL_PRESET_ALIAS, extension].join('.'),
     );
 
@@ -77,6 +80,51 @@ export const upload = withTryCatch(async (req, res) => {
         imageUrl,
     });
 
-    // TODO: очистка памяти
-    // TODO: пресеты
+    const presets = await Preset.findAll({
+        where: { ProjectAlias: projectAlias },
+    });
+
+    const handleResizeFunctions = presets.map((preset) => async () => {
+        const currentFilePath = path.join(
+            imageTempDirPath,
+            [preset.alias, extension].join('.'),
+        );
+
+        await sharp(originalFilePath)
+            .resize(
+                preset.isHorizontal
+                    ? { width: preset.size }
+                    : { height: preset.size },
+            )
+            .toFile(currentFilePath);
+
+        const { fileUrl } = await s3Api.uploadFile({
+            fileName: generateS3FileName({
+                projectAlias,
+                imageId,
+                presetAlias: preset.alias,
+                extension,
+            }),
+            filePath: currentFilePath,
+            contentType,
+        });
+
+        await new CroppedImage({
+            PresetId: preset.id,
+            ImageId: imageId,
+            link: fileUrl,
+        }).save();
+
+        fs.rmSync(currentFilePath);
+    });
+
+    await Promise.all(handleResizeFunctions.map((fn) => fn()));
+
+    fs.rmSync(originalFilePath);
+    try {
+        fs.rmSync(imageTempDirPath, { recursive: false, force: false });
+        fs.rmSync(projectTempDirPath, { recursive: false, force: false });
+    } catch {
+        // Удаляем папки только если они пустые
+    }
 });

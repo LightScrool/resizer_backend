@@ -52,7 +52,8 @@ export const fillWithMockData = async () => {
         await Preset.create({
             ProjectAlias: 'test-project1',
             alias: 'preset2',
-            size: 500,
+            size: 400,
+            isHorizontal: false,
         });
     }
 
