@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
 
 type ConstructorParams = {
     endpointUrl: string;
@@ -11,6 +12,7 @@ type ConstructorParams = {
 type UploadFileParams = {
     fileName: string;
     filePath: string;
+    contentType: string;
 };
 
 export class S3Api {
@@ -36,12 +38,23 @@ export class S3Api {
         });
     }
 
-    async uploadFile({ fileName, filePath }: UploadFileParams) {
+    async uploadFile({ fileName, filePath, contentType }: UploadFileParams) {
+        const extension = filePath.split('.').pop();
+
+        if (!extension) {
+            throw new Error('Failed to get file extension');
+        }
+
+        if (!checkIsAllowedExtension(extension)) {
+            throw new Error('Forbidden file extension');
+        }
+
         await this.s3Client.send(
             new PutObjectCommand({
                 Bucket: this.bucketName,
                 Key: fileName,
                 Body: fs.readFileSync(filePath),
+                ContentType: contentType,
             }),
         );
 

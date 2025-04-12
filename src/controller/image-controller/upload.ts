@@ -6,10 +6,12 @@ import { ApiError } from '~/errors/api-error';
 import { withTryCatch } from '~/helpers/with-try-catch';
 import { Image } from '~/models';
 import { getTempFilesDirName } from '~/helpers/get-temp-files-dir-name';
-import { ALLOWED_FILES_EXTENSIONS, ORIGINAL_PRESET_ALIAS } from '~/config';
+import { ORIGINAL_PRESET_ALIAS } from '~/config';
 import { s3Api } from '~/s3-api';
 import { generateS3FileName } from '~/helpers/generate-s3-file-name';
 import { getOuterImageUrl } from '~/helpers/get-outer-image-url';
+import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
+import { getContentType } from '~/helpers/get-content-type';
 
 export const upload = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -23,7 +25,7 @@ export const upload = withTryCatch(async (req, res) => {
     }
 
     const extension = file.name.split('.').pop();
-    if (!extension || !ALLOWED_FILES_EXTENSIONS.includes(extension)) {
+    if (!checkIsAllowedExtension(extension)) {
         // TODO: sec extension check
         throw ApiError.badRequest(`Exteinsion "${extension}" is not allowed`);
     }
@@ -39,11 +41,12 @@ export const upload = withTryCatch(async (req, res) => {
 
     const originalFilePath = path.join(
         dirPath,
-        [ORIGINAL_PRESET_ALIAS, extension].join(''),
+        [ORIGINAL_PRESET_ALIAS, extension].join('.'),
     );
 
     await file.mv(originalFilePath);
 
+    const contentType = getContentType(extension);
     const { fileUrl } = await s3Api.uploadFile({
         fileName: generateS3FileName({
             projectAlias,
@@ -52,6 +55,7 @@ export const upload = withTryCatch(async (req, res) => {
             extension,
         }),
         filePath: originalFilePath,
+        contentType,
     });
 
     await new Image({
@@ -72,4 +76,7 @@ export const upload = withTryCatch(async (req, res) => {
         id: imageId,
         imageUrl,
     });
+
+    // TODO: очистка памяти
+    // TODO: пресеты
 });
