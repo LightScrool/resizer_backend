@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z, TypeOf } from 'zod';
 
 import { aliasSchema } from './alias';
 
@@ -15,5 +15,7 @@ export const inputPresetSchema = z
         alias: true,
         size: true,
     });
+
+export type InputPreset = TypeOf<typeof inputPresetSchema>;
 
 export const inputPresetListSchema = z.array(inputPresetSchema);

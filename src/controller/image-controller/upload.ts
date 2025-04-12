@@ -1,18 +1,17 @@
 import { v4 as uuidV4 } from 'uuid';
 import fs from 'fs';
-import path from 'path';
 import sharp from 'sharp';
 
 import { ApiError } from '~/errors/api-error';
 import { withTryCatch } from '~/helpers/with-try-catch';
 import { Image, Preset, CroppedImage } from '~/models';
-import { getTempFilesDirName } from '~/helpers/get-temp-files-dir-name';
 import { ORIGINAL_PRESET_ALIAS } from '~/config';
 import { s3Api } from '~/s3-api';
 import { generateS3FileName } from '~/helpers/generate-s3-file-name';
 import { getOuterImageUrl } from '~/helpers/get-outer-image-url';
 import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
 import { getContentType } from '~/helpers/get-content-type';
+import { getFileTempPath, getImageTempDirPath } from '~/helpers/temp-files';
 
 export const upload = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -37,15 +36,16 @@ export const upload = withTryCatch(async (req, res) => {
         imageId = uuidV4();
     }
 
-    const projectTempDirPath = path.join(getTempFilesDirName(), projectAlias);
-    const imageTempDirPath = path.join(projectTempDirPath, imageId);
+    const [imageTempDirPath, cleanUpImageTempDir] = getImageTempDirPath({
+        projectAlias,
+        imageId,
+    });
 
-    fs.mkdirSync(imageTempDirPath, { recursive: true });
-
-    const originalFilePath = path.join(
+    const originalFilePath = getFileTempPath({
         imageTempDirPath,
-        [ORIGINAL_PRESET_ALIAS, extension].join('.'),
-    );
+        presetAlias: ORIGINAL_PRESET_ALIAS,
+        extension,
+    });
 
     await file.mv(originalFilePath);
 
@@ -92,10 +92,11 @@ export const upload = withTryCatch(async (req, res) => {
     });
 
     const handleResizeFunctions = presets.map((preset) => async () => {
-        const currentFilePath = path.join(
+        const currentFilePath = getFileTempPath({
             imageTempDirPath,
-            [preset.alias, extension].join('.'),
-        );
+            presetAlias: preset.alias,
+            extension,
+        });
 
         await sharp(originalFilePath)
             .resize(
@@ -128,10 +129,5 @@ export const upload = withTryCatch(async (req, res) => {
     await Promise.all(handleResizeFunctions.map((fn) => fn()));
 
     fs.rmSync(originalFilePath);
-    try {
-        fs.rmSync(imageTempDirPath, { recursive: false, force: false });
-        fs.rmSync(projectTempDirPath, { recursive: false, force: false });
-    } catch {
-        // Удаляем папки только если они пустые
-    }
+    cleanUpImageTempDir();
 });

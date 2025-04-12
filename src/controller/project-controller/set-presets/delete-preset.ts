@@ -26,7 +26,7 @@ export const deletePreset = async ({ projectAlias, presetAlias }: Params) => {
     await preset.destroy();
 
     for (const croppedImage of croppedImages) {
+        // Не используем await, чтобы не задерживать запрос
         s3Api.deleteFileByUrl(croppedImage.link);
-        croppedImage.destroy();
     }
 };
