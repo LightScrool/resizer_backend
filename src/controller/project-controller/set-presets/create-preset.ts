@@ -30,75 +30,73 @@ export const createPreset = async ({ projectAlias, preset }: Params) => {
         description: preset.description,
     }).save();
 
-    // TODO: let go request
-    const images = await Image.findAll({
+    // Дальше await не используем, чтобы отпустить запрос
+    Image.findAll({
         where: { ProjectAlias: projectAlias },
-    });
+    }).then((images) => {
+        images.forEach(async (image) => {
+            const extension = image.originalLink.split('.').pop();
 
-    for (const image of images) {
-        const extension = image.originalLink.split('.').pop();
+            if (!checkIsAllowedExtension(extension)) {
+                throw new Error(
+                    `Unallowed extension in image with id "${image.id}" of project "${projectAlias}"`,
+                );
+            }
 
-        if (!checkIsAllowedExtension(extension)) {
-            throw new Error(
-                `Unallowed extension in image with id "${image.id}" of project "${projectAlias}"`,
-            );
-        }
-
-        const imageTempDirPath = getImageTempDirPath({
-            projectAlias,
-            imageId: image.id,
-        });
-
-        const originalFilePath = getFileTempPath({
-            imageTempDirPath,
-            presetAlias: ORIGINAL_PRESET_ALIAS,
-            extension,
-        });
-        await captureTempFile(originalFilePath);
-
-        // TODO: await in loop
-        if (!fs.existsSync(originalFilePath)) {
-            await s3Api.downloadFileByUrl({
-                fileUrl: image.originalLink,
-                outputFilePath: originalFilePath,
-            });
-        }
-
-        const croppedFilePath = getFileTempPath({
-            imageTempDirPath,
-            presetAlias: preset.alias,
-            extension,
-        });
-        await captureTempFile(croppedFilePath);
-
-        await sharp(originalFilePath)
-            .resize(
-                preset.isHorizontal
-                    ? { width: preset.size }
-                    : { height: preset.size },
-            )
-            .toFile(croppedFilePath);
-
-        const contentType = getContentType(extension);
-        const { fileUrl } = await s3Api.uploadFile({
-            fileName: generateS3FileName({
+            const imageTempDirPath = getImageTempDirPath({
                 projectAlias,
                 imageId: image.id,
+            });
+
+            const originalFilePath = getFileTempPath({
+                imageTempDirPath,
+                presetAlias: ORIGINAL_PRESET_ALIAS,
+                extension,
+            });
+            await captureTempFile(originalFilePath);
+
+            if (!fs.existsSync(originalFilePath)) {
+                await s3Api.downloadFileByUrl({
+                    fileUrl: image.originalLink,
+                    outputFilePath: originalFilePath,
+                });
+            }
+
+            const croppedFilePath = getFileTempPath({
+                imageTempDirPath,
                 presetAlias: preset.alias,
                 extension,
-            }),
-            filePath: croppedFilePath,
-            contentType,
+            });
+            await captureTempFile(croppedFilePath);
+
+            await sharp(originalFilePath)
+                .resize(
+                    preset.isHorizontal
+                        ? { width: preset.size }
+                        : { height: preset.size },
+                )
+                .toFile(croppedFilePath);
+
+            const contentType = getContentType(extension);
+            const { fileUrl } = await s3Api.uploadFile({
+                fileName: generateS3FileName({
+                    projectAlias,
+                    imageId: image.id,
+                    presetAlias: preset.alias,
+                    extension,
+                }),
+                filePath: croppedFilePath,
+                contentType,
+            });
+
+            await new CroppedImage({
+                PresetId: presetId,
+                ImageId: image.id,
+                link: fileUrl,
+            }).save();
+
+            clenupTempFile(originalFilePath);
+            clenupTempFile(croppedFilePath);
         });
-
-        await new CroppedImage({
-            PresetId: presetId,
-            ImageId: image.id,
-            link: fileUrl,
-        }).save();
-
-        // TODO race (один пресет удаляет originalFilePath, пока другому он ещё нужен)
-        clenupTempFile(originalFilePath);
-        clenupTempFile(croppedFilePath);
-    }
+    });
 };
