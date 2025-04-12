@@ -7,13 +7,9 @@ export const errorHandlingMiddleware = (
     res: Response,
     _next: NextFunction,
 ) => {
-    if (err instanceof ApiError) {
-        res.locals.message = err.message;
-        res.status(err.status);
-    } else {
-        res.locals.message = 'Internal server error';
-        res.status(500);
-    }
+    const status = err instanceof ApiError ? err.status : 500;
+    const message =
+        err instanceof ApiError ? err.message : 'Internal server error';
 
-    res.send();
+    res.status(status).json({ message });
 };
