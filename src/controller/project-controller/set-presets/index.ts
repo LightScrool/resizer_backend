@@ -4,6 +4,7 @@ import { inputPresetListSchema, InputPreset } from '~/schema/preset';
 import { Project, Preset } from '~/models';
 import { deletePreset } from './delete-preset';
 import { createPreset } from './create-preset';
+import { updatePreset } from './update-preset';
 
 export const setPresets = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -43,35 +44,49 @@ export const setPresets = withTryCatch(async (req, res) => {
     const oldPresetList = await Preset.findAll({
         where: { ProjectAlias: projectAlias },
     });
-    const oldPresetAliases = new Set(
-        oldPresetList.map((preset) => preset.alias),
-    );
+    const oldPresetsDict: Record<string, Preset> = {};
+
+    for (const oldPreset of oldPresetList) {
+        if (oldPreset.alias in oldPresetsDict) {
+            throw ApiError.badRequest(
+                `Preset alias "${oldPreset.alias}" has multiple declarations`,
+            );
+        }
+        oldPresetsDict[oldPreset.alias] = oldPreset;
+    }
 
     const presetsToCreateAliases: string[] = [];
     const presetsToDeleteAliases: string[] = [];
-    const presetsToEditAliases: string[] = [];
+    const presetsToUpdateAliases: string[] = [];
 
     for (const preset of Object.values(newPresetsDict)) {
-        if (oldPresetAliases.has(preset.alias)) {
-            presetsToEditAliases.push(preset.alias);
+        if (preset.alias in oldPresetsDict) {
+            presetsToUpdateAliases.push(preset.alias);
         } else {
             presetsToCreateAliases.push(preset.alias);
         }
     }
 
-    for (const preset of oldPresetAliases) {
-        if (!(preset in newPresetsDict)) {
-            presetsToDeleteAliases.push(preset);
+    for (const preset of Object.values(oldPresetsDict)) {
+        if (!(preset.alias in newPresetsDict)) {
+            presetsToDeleteAliases.push(preset.alias);
         }
     }
 
-    presetsToDeleteAliases.forEach((presetAlias) =>
-        deletePreset({ projectAlias, presetAlias }),
-    );
-
-    presetsToCreateAliases.forEach((presetAlias) =>
-        createPreset({ projectAlias, preset: newPresetsDict[presetAlias] }),
-    );
-
     res.status(200).send();
+
+    await Promise.all([
+        ...presetsToDeleteAliases.map((presetAlias) =>
+            deletePreset({ projectAlias, presetAlias }),
+        ),
+        ...presetsToCreateAliases.map((presetAlias) =>
+            createPreset({ projectAlias, preset: newPresetsDict[presetAlias] }),
+        ),
+        ...presetsToUpdateAliases.map((presetAlias) =>
+            updatePreset({
+                newPreset: newPresetsDict[presetAlias],
+                dbPreset: oldPresetsDict[presetAlias],
+            }),
+        ),
+    ]);
 });

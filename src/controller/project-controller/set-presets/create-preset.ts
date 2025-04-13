@@ -1,4 +1,3 @@
-import fs from 'fs';
 import sharp from 'sharp';
 
 import { InputPreset } from '~/schema/preset';
@@ -55,12 +54,10 @@ export const createPreset = async ({ projectAlias, preset }: Params) => {
         });
         await captureTempFile(originalFilePath);
 
-        if (!fs.existsSync(originalFilePath)) {
-            await s3Api.downloadFileByUrl({
-                fileUrl: image.originalLink,
-                outputFilePath: originalFilePath,
-            });
-        }
+        await s3Api.downloadFileByUrl({
+            fileUrl: image.originalLink,
+            outputFilePath: originalFilePath,
+        });
 
         const croppedFilePath = getFileTempPath({
             imageTempDirPath,

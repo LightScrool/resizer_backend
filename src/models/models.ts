@@ -8,6 +8,7 @@ import {
 } from 'sequelize';
 
 import { sequelize } from './db';
+import { IS_HORIZONTAL_DEFAULT_VALUE } from './constants';
 
 class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
     declare name: string;
@@ -80,7 +81,10 @@ Preset.init(
         alias: { type: DataTypes.STRING, primaryKey: true },
 
         size: { type: DataTypes.INTEGER, allowNull: false },
-        isHorizontal: { type: DataTypes.BOOLEAN, defaultValue: true },
+        isHorizontal: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: IS_HORIZONTAL_DEFAULT_VALUE,
+        },
 
         name: { type: DataTypes.STRING, allowNull: true },
         description: { type: DataTypes.STRING, allowNull: true },
