@@ -7,7 +7,6 @@ import { errorHandlingMiddleware } from './middleware/error-handling-middleware'
 import { logInfoMiddleware } from './middleware/log-info-middleware';
 import { router } from './routes';
 import { initDb } from './models';
-import { fillWithMockData } from './models/__mock__';
 
 dotenv.config();
 const PORT = process.env.PORT || 5000;
@@ -27,8 +26,6 @@ app.use(errorHandlingMiddleware);
 const start = async () => {
     try {
         await initDb();
-
-        await fillWithMockData();
 
         app.listen(PORT, () => {
             console.log(`Server started on port ${PORT}`);
