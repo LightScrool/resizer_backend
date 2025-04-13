@@ -5,12 +5,66 @@ import { ApiError } from '~/errors/api-error';
 
 const router = Router();
 
-router.get('/health-check', (req, res, _next) => {
+/** Всегда возвращает 200 */
+router.get('/health-check', (req, res) => {
     res.status(200).json({ message: 'ok' });
 });
 
-router.post('/v1/projects/:projectAlias/images', imageController.upload);
+/** Информаиця о пользователе, для шапки */
+router.get('/v1/user', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Список проектов пользователя */
+router.get('/v1/user/projects', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Создание проекта */
+router.post('/v1/projects', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Удаление проекта */
+router.delete('/v1/projects/:projectAlias', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Информация о проекте (название, описание) */
+router.get('/v1/projects/:projectAlias', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Список пресетов в проекте */
+router.get('/v1/projects/:projectAlias/presets', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Установка пресетов проекта */
 router.post('/v1/projects/:projectAlias/presets', projectController.setPresets);
+
+/** Список изображений в проекте */
+router.get('/v1/projects/:projectAlias/images', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Загружка изображения в проекте */
+router.post('/v1/projects/:projectAlias/images', imageController.upload);
+
+/** Удаление изображения */
+router.delete('/v1/projects/:projectAlias/images/:imageId', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Получение секретного ключа проекта */
+router.get('/v1/projects/:projectAlias/apiKey', (req, res) => {
+    res.status(404).send(); // TODO
+});
+
+/** Сброс секретного ключа проекта */
+router.delete('/v1/projects/:projectAlias/apiKey', (req, res) => {
+    res.status(404).send(); // TODO
+});
 
 router.use((_req, _res, next) => {
     next(ApiError.notFound('Route not found'));
