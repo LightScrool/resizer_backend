@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { imageController } from '~/controller/image-controller';
 import { projectController } from '~/controller/project-controller';
+import { userController } from '~/controller/user-controller';
 import { ApiError } from '~/errors/api-error';
 
 const router = Router();
@@ -11,9 +12,7 @@ router.get('/health-check', (req, res) => {
 });
 
 /** Информаиця о пользователе, для шапки */
-router.get('/v1/user', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.get('/v1/user', userController.getInfo);
 
 /** Список проектов пользователя */
 router.get('/v1/user/projects', (req, res) => {

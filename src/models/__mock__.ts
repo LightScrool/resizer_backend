@@ -6,15 +6,20 @@ import { Op } from 'sequelize';
 export const fillWithMockData = async () => {
     console.log('WARNING! Filling database with mock data.\n');
 
-    if (!(await User.findOne({ where: { name: 'test-user' } }))) {
-        await User.create({
+    const userDb = await User.findOne({ where: { name: 'test-user' } });
+    let userId;
+    if (userDb) {
+        userId = userDb.id;
+    } else {
+        const newUser = await User.create({
             name: 'test-user',
         });
+        userId = newUser.id;
     }
 
     if (!(await Project.findOne({ where: { alias: 'test-project1' } }))) {
         await Project.create({
-            UserName: 'test-user',
+            UserId: userId,
             alias: 'test-project1',
             apiKey: uuidV4(),
         });
@@ -22,7 +27,7 @@ export const fillWithMockData = async () => {
 
     if (!(await Project.findOne({ where: { alias: 'test-project2' } }))) {
         await Project.create({
-            UserName: 'test-user',
+            UserId: userId,
             alias: 'test-project2',
             apiKey: uuidV4(),
         });

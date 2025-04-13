@@ -11,6 +11,8 @@ import { sequelize } from './db';
 import { IS_HORIZONTAL_DEFAULT_VALUE } from './constants';
 
 class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+    declare id: CreationOptional<string>;
+
     declare name: string;
 
     declare projectsLimit: CreationOptional<number>;
@@ -20,7 +22,9 @@ class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
 
 User.init(
     {
-        name: { type: DataTypes.STRING, primaryKey: true },
+        id: { type: DataTypes.BIGINT, autoIncrement: true, primaryKey: true },
+
+        name: { type: DataTypes.STRING },
 
         projectsLimit: { type: DataTypes.INTEGER, defaultValue: 5 },
 
@@ -42,7 +46,7 @@ class Project extends Model<
     declare name: string | null;
     declare description: string | null;
 
-    declare UserName: ForeignKey<string>;
+    declare UserId: ForeignKey<string>;
 }
 
 Project.init(
