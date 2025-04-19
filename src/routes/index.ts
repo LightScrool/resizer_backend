@@ -53,9 +53,10 @@ router.delete('/v1/projects/:projectAlias/images/:imageId', (req, res) => {
 router.get('/v1/projects/:projectAlias/apiKey', projectController.getApiKey);
 
 /** Сброс секретного ключа проекта */
-router.delete('/v1/projects/:projectAlias/apiKey', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.delete(
+    '/v1/projects/:projectAlias/apiKey',
+    projectController.refreshApiKey,
+);
 
 router.use((_req, _res, next) => {
     next(ApiError.notFound('Route not found'));
