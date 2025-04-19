@@ -50,9 +50,7 @@ router.delete('/v1/projects/:projectAlias/images/:imageId', (req, res) => {
 });
 
 /** Получение секретного ключа проекта */
-router.get('/v1/projects/:projectAlias/apiKey', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.get('/v1/projects/:projectAlias/apiKey', projectController.getApiKey);
 
 /** Сброс секретного ключа проекта */
 router.delete('/v1/projects/:projectAlias/apiKey', (req, res) => {
