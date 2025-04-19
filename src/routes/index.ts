@@ -21,9 +21,7 @@ router.get('/v1/user/projects', userController.getProjectsList);
 router.post('/v1/projects', projectController.create);
 
 /** Удаление проекта */
-router.delete('/v1/projects/:projectAlias', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.delete('/v1/projects/:projectAlias', projectController.remove);
 
 /** Информация о проекте (название, описание) */
 router.get('/v1/projects/:projectAlias', projectController.getInfo);
