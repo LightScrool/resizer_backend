@@ -15,14 +15,10 @@ router.get('/health-check', (req, res) => {
 router.get('/v1/user', userController.getInfo);
 
 /** Список проектов пользователя */
-router.get('/v1/user/projects', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.get('/v1/user/projects', userController.getProjectsList);
 
 /** Создание проекта */
-router.post('/v1/projects', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.post('/v1/projects', projectController.create);
 
 /** Удаление проекта */
 router.delete('/v1/projects/:projectAlias', (req, res) => {
