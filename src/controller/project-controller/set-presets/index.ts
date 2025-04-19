@@ -5,6 +5,7 @@ import { Project, Preset } from '~/models';
 import { deletePreset } from './delete-preset';
 import { createPreset } from './create-preset';
 import { updatePreset } from './update-preset';
+import { validateProjectAccess } from '~/auth/validate-project-access';
 
 export const setPresets = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -28,6 +29,8 @@ export const setPresets = withTryCatch(async (req, res) => {
         }
         newPresetsDict[newPreset.alias] = newPreset;
     }
+
+    await validateProjectAccess(req, projectAlias, 'any');
 
     const project = await Project.findOne({
         where: { alias: projectAlias },

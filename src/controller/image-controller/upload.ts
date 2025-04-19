@@ -12,10 +12,10 @@ import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
 import { getContentType } from '~/helpers/get-content-type';
 import { getFileTempPath, getImageTempDirPath } from '~/helpers/temp-files';
 import { captureTempFile, clenupTempFile } from '~/helpers/temp-file-resources';
+import { validateProjectAccess } from '~/auth/validate-project-access';
 
 export const upload = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
-    // TODO: auth
 
     const file = Array.isArray(req.files?.file)
         ? req.files?.file[0]
@@ -29,6 +29,8 @@ export const upload = withTryCatch(async (req, res) => {
         // TODO: sec extension check
         throw ApiError.badRequest(`Exteinsion "${extension}" is not allowed`);
     }
+
+    await validateProjectAccess(req, projectAlias, 'any');
 
     let imageId = uuidV4();
     while (await Image.findOne({ where: { id: imageId } })) {

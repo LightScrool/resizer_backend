@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { User } from '~/models';
 
-const AUTH_START = 'OAuth ';
+export const WEB_AUTH_START = 'OAuth ';
 const YP_ENDPOINT_URL = 'https://login.yandex.ru/info?format=json';
 
 type UserAuthInfo = {
@@ -21,7 +21,7 @@ export const getUserAuthInfo = async (
             return null;
         }
 
-        if (!authorization.startsWith(AUTH_START)) {
+        if (!authorization.startsWith(WEB_AUTH_START)) {
             return null;
         }
 

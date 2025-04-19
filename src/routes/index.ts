@@ -26,9 +26,7 @@ router.delete('/v1/projects/:projectAlias', (req, res) => {
 });
 
 /** Информация о проекте (название, описание) */
-router.get('/v1/projects/:projectAlias', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.get('/v1/projects/:projectAlias', projectController.getInfo);
 
 /** Список пресетов в проекте */
 router.get('/v1/projects/:projectAlias/presets', (req, res) => {

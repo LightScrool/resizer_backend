@@ -20,3 +20,11 @@ export type ProjectListItem = {
     name: string | null;
     description: string | null;
 };
+
+export type ProjectInfo = {
+    alias: string;
+    presetsLimit: number;
+    imagesLimit: number;
+    name: string | null;
+    description: string | null;
+};
