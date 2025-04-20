@@ -11,5 +11,5 @@ export const getOuterImageUrl = ({
     imageId,
     presetAlias,
 }: Params) => {
-    return `${IMAGE_PROXY_HOST}/${projectAlias}/${imageId}/${presetAlias}`; // TODO: move localhost to env
+    return `${IMAGE_PROXY_HOST}/${projectAlias}/${imageId}/${presetAlias}`;
 };

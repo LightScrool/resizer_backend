@@ -1,6 +1,6 @@
 import { withTryCatch } from '~/helpers/with-try-catch';
 import { validateProjectAccess } from '~/auth/validate-project-access';
-import { Project, Image, Preset } from '~/models';
+import { Image, Preset } from '~/models';
 import { ApiError } from '~/errors/api-error';
 import { s3Api } from '~/s3-api';
 
@@ -13,40 +13,30 @@ type ImageWithPresets = Image & {
 };
 
 export const remove = withTryCatch(async (req, res) => {
-    const { projectAlias } = req.params;
+    const { projectAlias, imageId } = req.params;
 
     await validateProjectAccess(req, projectAlias, 'web-only');
 
-    const project = await Project.findOne({ where: { alias: projectAlias } });
-
-    if (!project) {
-        throw ApiError.notFound('Project not found');
-    }
-
     // @ts-expect-error Кривая типизация ORM
-    const images: ImageWithPresets[] = await Image.findAll({
-        where: { ProjectAlias: projectAlias },
+    const image: ImageWithPresets | undefined = await Image.findOne({
+        where: { id: imageId, ProjectAlias: projectAlias },
         include: [{ model: Preset }],
     });
 
-    const imagesToDeleteLinks = images.reduce<Array<string>>(
-        (result, image) => {
-            result.push(image.originalLink);
+    if (!image) {
+        throw ApiError.notFound('Image not found');
+    }
 
-            image.Presets.forEach((preset) => {
-                result.push(preset.CroppedImage.link);
-            });
-
-            return result;
-        },
-        [],
-    );
+    const imagesToDeleteLinks = [
+        image.originalLink,
+        ...image.Presets.map((preset) => preset.CroppedImage.link),
+    ];
 
     await Promise.all(
         imagesToDeleteLinks.map((link) => s3Api.deleteFileByUrl(link)),
     );
 
-    await project.destroy();
+    await image.destroy();
 
     res.status(200).send();
 });

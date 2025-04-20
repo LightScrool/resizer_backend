@@ -45,9 +45,10 @@ router.get(
 router.post('/v1/projects/:projectAlias/images', imageController.upload);
 
 /** Удаление изображения */
-router.delete('/v1/projects/:projectAlias/images/:imageId', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.delete(
+    '/v1/projects/:projectAlias/images/:imageId',
+    imageController.remove,
+);
 
 /** Получение секретного ключа проекта */
 router.get('/v1/projects/:projectAlias/apiKey', projectController.getApiKey);
