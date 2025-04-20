@@ -7,8 +7,8 @@ export const inputPresetSchema = z
         alias: aliasSchema,
         size: z.number().int().positive().max(5000),
         isHorizontal: z.boolean(),
-        name: z.string().max(255),
-        description: z.string().max(255),
+        name: z.string().max(255).nullable(),
+        description: z.string().max(255).nullable(),
     })
     .partial()
     .required({
