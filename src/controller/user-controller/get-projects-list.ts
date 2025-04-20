@@ -16,6 +16,7 @@ export const getProjectsList = withTryCatch(async (req, res) => {
     const [projectsDb, userDb] = await Promise.all([
         Project.findAll({
             where: { UserId: userId },
+            order: [['updatedAt', 'DESC']],
         }),
         User.findOne({
             where: { id: userId },

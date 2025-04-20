@@ -10,6 +10,7 @@ export const getPresetsList = withTryCatch(async (req, res) => {
 
     const presets = await Preset.findAll({
         where: { ProjectAlias: projectAlias },
+        order: [['updatedAt', 'DESC']],
     });
 
     const result: OutputPreset[] = presets.map((presetDb) => ({
