@@ -5,7 +5,7 @@ const EXTENSION_TO_CONTENT_TYPE_DICT: Record<AllowedFilesExtensions, string> = {
     jpeg: 'image/jpeg',
     png: 'image/png',
     webp: 'image/webp',
-    svg: 'image/svg',
+    svg: 'image/svg+xml',
 };
 
 export const getContentType = (extension: AllowedFilesExtensions) => {
