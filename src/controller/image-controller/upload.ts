@@ -13,6 +13,7 @@ import { getContentType } from '~/helpers/get-content-type';
 import { getFileTempPath, getImageTempDirPath } from '~/helpers/temp-files';
 import { captureTempFile, clenupTempFile } from '~/helpers/temp-file-resources';
 import { validateProjectAccess } from '~/auth/validate-project-access';
+import { OutputImage } from '~/schema/preset';
 
 export const upload = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -85,10 +86,14 @@ export const upload = withTryCatch(async (req, res) => {
         presetAlias: ORIGINAL_PRESET_ALIAS,
     });
 
-    res.json({
+    const result: OutputImage = {
         id: imageId,
-        imageUrl,
-    });
+        link: imageUrl,
+        name,
+        description,
+    };
+
+    res.json(result);
 
     const presets = await Preset.findAll({
         where: { ProjectAlias: projectAlias },

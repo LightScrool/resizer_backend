@@ -27,3 +27,10 @@ export type OutputPreset = {
     name?: string | null;
     description?: string | null;
 };
+
+export type OutputImage = {
+    id: string;
+    link: string;
+    name?: string | null;
+    description?: string | null;
+};

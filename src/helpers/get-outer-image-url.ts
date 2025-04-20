@@ -1,3 +1,5 @@
+import { IMAGE_PROXY_HOST } from '~/config';
+
 type Params = {
     projectAlias: string;
     imageId: string;
@@ -9,5 +11,5 @@ export const getOuterImageUrl = ({
     imageId,
     presetAlias,
 }: Params) => {
-    return `http://localhost:5001/${projectAlias}/${imageId}/${presetAlias}`; // TODO: move localhost to env
+    return `${IMAGE_PROXY_HOST}/${projectAlias}/${imageId}/${presetAlias}`; // TODO: move localhost to env
 };

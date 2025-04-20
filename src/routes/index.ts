@@ -36,9 +36,10 @@ router.get(
 router.post('/v1/projects/:projectAlias/presets', projectController.setPresets);
 
 /** Список изображений в проекте */
-router.get('/v1/projects/:projectAlias/images', (req, res) => {
-    res.status(404).send(); // TODO
-});
+router.get(
+    '/v1/projects/:projectAlias/images',
+    projectController.getImagesList,
+);
 
 /** Загружка изображения в проекте */
 router.post('/v1/projects/:projectAlias/images', imageController.upload);
