@@ -4,6 +4,7 @@ import { getInfo } from './get-info';
 import { getApiKey } from './api-key/get';
 import { refreshApiKey } from './api-key/refresh';
 import { remove } from './remove';
+import { getPresetsList } from './get-presets-list';
 
 export const projectController = {
     create,
@@ -12,4 +13,5 @@ export const projectController = {
     remove,
     getApiKey,
     refreshApiKey,
+    getPresetsList,
 };

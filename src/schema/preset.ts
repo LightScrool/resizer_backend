@@ -19,3 +19,11 @@ export const inputPresetSchema = z
 export type InputPreset = TypeOf<typeof inputPresetSchema>;
 
 export const inputPresetListSchema = z.array(inputPresetSchema);
+
+export type OutputPreset = {
+    alias: string;
+    size: number;
+    isHorizontal: boolean;
+    name?: string | null;
+    description?: string | null;
+};
