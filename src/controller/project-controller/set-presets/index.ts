@@ -6,6 +6,7 @@ import { deletePreset } from './delete-preset';
 import { createPreset } from './create-preset';
 import { updatePreset } from './update-preset';
 import { validateProjectAccess } from '~/auth/validate-project-access';
+import { ORIGINAL_PRESET_ALIAS } from '~/config';
 
 export const setPresets = withTryCatch(async (req, res) => {
     const { projectAlias } = req.params;
@@ -18,6 +19,12 @@ export const setPresets = withTryCatch(async (req, res) => {
     }
 
     const newPresetsList = parsedBody.data;
+
+    if (newPresetsList.some(({ alias }) => alias === ORIGINAL_PRESET_ALIAS)) {
+        throw ApiError.badRequest(
+            `Impossible to create preset with alias "${ORIGINAL_PRESET_ALIAS}"`,
+        );
+    }
 
     const newPresetsDict: Record<string, InputPreset> = {};
 
