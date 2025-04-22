@@ -73,7 +73,8 @@ export const getUserAuthInfo = async (
         }
 
         return result;
-    } catch {
+    } catch (e) {
+        console.log(`Exception in getUserAuthInfo: ${(e as Error)?.message}`);
         return null;
     }
 };
