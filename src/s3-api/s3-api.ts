@@ -22,7 +22,11 @@ type UploadFileParams = {
 
 type DownloadFileByUrlParams = {
     fileUrl: string;
-    outputFilePath: string;
+};
+
+type DownloadFileByUrlResult = {
+    fileStream: Stream;
+    contentType: string | undefined;
 };
 
 export class S3Api {
@@ -101,11 +105,10 @@ export class S3Api {
 
     async downloadFileByUrl({
         fileUrl,
-        outputFilePath,
-    }: DownloadFileByUrlParams) {
+    }: DownloadFileByUrlParams): Promise<DownloadFileByUrlResult> {
         const { bucketName, fileName } = this.getDataFromFileUrl(fileUrl);
 
-        const { Body } = await this.s3Client.send(
+        const { Body, ContentType } = await this.s3Client.send(
             new GetObjectCommand({
                 Bucket: bucketName,
                 Key: fileName,
@@ -116,15 +119,9 @@ export class S3Api {
             throw new Error('Error when downloading file from s3');
         }
 
-        try {
-            await new Promise<void>((resolve, reject) => {
-                (Body as Stream)
-                    .pipe(fs.createWriteStream(outputFilePath))
-                    .on('error', (err) => reject(err))
-                    .on('close', () => resolve());
-            });
-        } catch {
-            throw new Error('Error when downloading file from s3');
-        }
+        return {
+            fileStream: Body as Stream,
+            contentType: ContentType,
+        };
     }
 }

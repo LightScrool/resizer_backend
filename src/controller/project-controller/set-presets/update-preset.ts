@@ -11,11 +11,12 @@ import { checkIsEqual } from './utils/check-is-equal';
 import { checkShouldUpdateImages } from './utils/chech-should-update-images';
 import { getFileTempPath, getImageTempDirPath } from '~/helpers/temp-files';
 import { ORIGINAL_PRESET_ALIAS } from '~/config';
-import { checkIsAllowedExtension } from '~/helpers/check-is-allowed-extension';
 import { captureTempFile, clenupTempFile } from '~/helpers/temp-file-resources';
 import { s3Api } from '~/s3-api';
-import { getContentType } from '~/helpers/get-content-type';
+import { getExtension } from '~/helpers/get-content-type';
 import { generateS3FileName } from '~/helpers/generate-s3-file-name';
+import { ApiError } from '~/errors/api-error';
+import { writeStreamToFile } from '~/helpers/write-stream-to-file';
 
 type Params = {
     newPreset: InputPreset;
@@ -61,32 +62,42 @@ export const updatePreset = async ({ newPreset, dbPreset }: Params) => {
             throw new Error('Get Image error');
         }
 
-        const extension = image.originalLink.split('.').pop();
-        if (!checkIsAllowedExtension(extension)) {
-            throw new Error(
-                `Unallowed extension in image with id "${image.id}" of project "${image.ProjectAlias}"`,
-            );
-        }
-
         const imageTempDirPath = getImageTempDirPath({
             projectAlias: dbPreset.ProjectAlias,
             imageId: image.id,
         });
 
-        const originalFilePath = getFileTempPath({
+        const [{ fileStream, contentType }] = await Promise.all([
+            s3Api.downloadFileByUrl({ fileUrl: image.originalLink }),
+            s3Api.deleteFileByUrl(croppedImage.link),
+        ]);
+
+        if (!contentType) {
+            throw ApiError.internal(
+                'Result of downloadFileByUrl do not include contentType',
+            );
+        }
+
+        const extension = getExtension(contentType);
+
+        if (!extension) {
+            throw ApiError.internal(
+                'Result of downloadFileByUrl include unexpected contentType',
+            );
+        }
+
+        const originalTempFilePath = getFileTempPath({
             imageTempDirPath,
             presetAlias: ORIGINAL_PRESET_ALIAS,
             extension,
         });
-        await captureTempFile(originalFilePath);
 
-        await Promise.all([
-            s3Api.downloadFileByUrl({
-                fileUrl: image.originalLink,
-                outputFilePath: originalFilePath,
-            }),
-            s3Api.deleteFileByUrl(croppedImage.link),
-        ]);
+        await captureTempFile(originalTempFilePath);
+
+        await writeStreamToFile({
+            fileStream,
+            outputFilePath: originalTempFilePath,
+        });
 
         const croppedFilePath = getFileTempPath({
             imageTempDirPath,
@@ -95,7 +106,7 @@ export const updatePreset = async ({ newPreset, dbPreset }: Params) => {
         });
         await captureTempFile(croppedFilePath);
 
-        await sharp(originalFilePath)
+        await sharp(originalTempFilePath)
             .resize(
                 dbPreset.isHorizontal
                     ? { width: dbPreset.size }
@@ -103,13 +114,11 @@ export const updatePreset = async ({ newPreset, dbPreset }: Params) => {
             )
             .toFile(croppedFilePath);
 
-        const contentType = getContentType(extension);
         const { fileUrl } = await s3Api.uploadFile({
             fileName: generateS3FileName({
                 projectAlias: image.ProjectAlias,
                 imageId: image.id,
                 presetAlias: dbPreset.alias,
-                extension,
             }),
             filePath: croppedFilePath,
             contentType,
@@ -118,7 +127,7 @@ export const updatePreset = async ({ newPreset, dbPreset }: Params) => {
         croppedImage.link = fileUrl;
         await croppedImage.save();
 
-        clenupTempFile(originalFilePath);
+        clenupTempFile(originalTempFilePath);
         clenupTempFile(croppedFilePath);
     });
 
