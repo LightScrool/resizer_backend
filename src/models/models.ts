@@ -28,7 +28,7 @@ User.init(
 
         projectsLimit: { type: DataTypes.INTEGER, defaultValue: 5 },
 
-        yandexId: { type: DataTypes.BIGINT, allowNull: true },
+        yandexId: { type: DataTypes.BIGINT, allowNull: true, unique: true },
     },
     { sequelize },
 );
