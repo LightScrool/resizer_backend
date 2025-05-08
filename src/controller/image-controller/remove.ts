@@ -15,7 +15,7 @@ type ImageWithPresets = Image & {
 export const remove = withTryCatch(async (req, res) => {
     const { projectAlias, imageId } = req.params;
 
-    await validateProjectAccess(req, projectAlias, 'web-only');
+    await validateProjectAccess(req, projectAlias, 'any');
 
     // @ts-expect-error Кривая типизация ORM
     const image: ImageWithPresets | undefined = await Image.findOne({
