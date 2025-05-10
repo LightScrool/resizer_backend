@@ -4,6 +4,7 @@ import path from 'path';
 dotenv.config();
 
 export const ROOT_FOLDER = path.join(process.cwd(), 'dist');
+export const PUBLIC_FOLDER = path.join(process.cwd(), 'public');
 
 export enum AllowedFilesExtensions {
     jpg = 'jpg',
