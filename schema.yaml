@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Resizer API
+  description: |-
+    Описание открытого RESTfull API для управления проектами Resizer.  
+    Для доступа к API необходима авторизация: добавьте к запросам заголовок "authorization" со значением "API *token*".  
+    Токен можно получить в панели управления на странице проекта.
+  version: 1.0.0
+externalDocs:
+  description: Панель управления Resizer
+  url: https://resizer-admin.netlify.app
+servers:
+  - url: https://resizer-api.onrender.com
+tags:
+  - name: project
+    description: Управление проектом и настройка сжатия
+  - name: images
+    description: Загрузка и удаление изображений
+paths:
+  /v1/projects/{projectAlias}:
+    get:
+      tags:
+        - project
+      summary: Базовая информация о проекте
+      operationId: getProjectInfo
+      parameters:
+        - name: projectAlias
+          in: path
+          description: Алиас проекта
+          required: true
+          schema:
+            $ref: '#/components/schemas/Alias'
+      responses:
+        '200':
+          description: Операция выполнена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectInfo'
+        '401':
+          description: Не предоставлен авторизационный токен
+        '403':
+          description: Предоставленный токен не даёт доступа к проекту
+        '404':
+          description: Проект не найден
+
+  /v1/projects/{projectAlias}/presets:
+    get:
+        tags:
+          - project
+        summary: Список пресетов проекта
+        operationId: getPresetsList
+        parameters:
+          - name: projectAlias
+            in: path
+            description: Алиас проекта
+            required: true
+            schema:
+              $ref: '#/components/schemas/Alias'
+        responses:
+          '200':
+            description: Операция выполнена
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/PresetInfo'
+          '401':
+            description: Не предоставлен авторизационный токен
+          '403':
+            description: Предоставленный токен не даёт доступа к проекту
+          '404':
+            description: Проект не найден
+    post:
+        tags:
+          - project
+        summary: Настройка пресетов проекта
+        operationId: setPresets
+        parameters:
+          - name: projectAlias
+            in: path
+            description: Алиас проекта
+            required: true
+            schema:
+              $ref: '#/components/schemas/Alias'
+        requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetPresets'
+        responses:
+          '200':
+            description: Операция выполнена
+          '400':
+            description: Передана невалидная конфигурация или превышен лимит пресетов
+          '401':
+            description: Не предоставлен авторизационный токен
+          '403':
+            description: Предоставленный токен не даёт доступа к проекту
+          '404':
+            description: Проект не найден
+
+  /v1/projects/{projectAlias}/images:
+    get:
+        tags:
+          - images
+        summary: Список изображений в проекте
+        operationId: getImagesList
+        parameters:
+          - name: projectAlias
+            in: path
+            description: Алиас проекта
+            required: true
+            schema:
+              $ref: '#/components/schemas/Alias'
+        responses:
+          '200':
+            description: Операция выполнена
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/ImageInfo'
+          '401':
+            description: Не предоставлен авторизационный токен
+          '403':
+            description: Предоставленный токен не даёт доступа к проекту
+          '404':
+            description: Проект не найден
+    post:
+        tags:
+          - images
+        summary: Загрузить изображение в проект
+        operationId: uploadImage
+        parameters:
+          - name: projectAlias
+            in: path
+            description: Алиас проекта
+            required: true
+            schema:
+              $ref: '#/components/schemas/Alias'
+        requestBody:
+          content:
+            multipart/form-data:
+              schema:
+                $ref: '#/components/schemas/UploadImageBody'
+        responses:
+          '200':
+            description: Операция выполнена
+          '400':
+            description: Не передан файл в разрешённом формате
+          '401':
+            description: Не предоставлен авторизационный токен
+          '403':
+            description: Предоставленный токен не даёт доступа к проекту
+          '404':
+            description: Проект не найден
+
+  /v1/projects/{projectAlias}/images/{imageId}:
+    delete:
+        tags:
+          - images
+        summary: Удалить изображение из проекта
+        operationId: removeImage
+        parameters:
+          - name: projectAlias
+            in: path
+            description: Алиас проекта
+            required: true
+            schema:
+              $ref: '#/components/schemas/Alias'
+          - name: imageId
+            in: path
+            description: Алиас проекта
+            required: true
+            schema:
+              $ref: '#/components/schemas/UUIDv4'
+        responses:
+          '200':
+            description: Операция выполнена
+          '401':
+            description: Не предоставлен авторизационный токен
+          '403':
+            description: Предоставленный токен не даёт доступа к проекту
+          '404':
+            description: Проект не найден
+
+components:
+  schemas:
+    Alias:
+      type: string
+      pattern: ^[a-z\d-_]{1,50}$
+      example: alias
+    UUIDv4:
+      type: string
+      pattern: ^[a-z\d]{8}-([a-z\d]{4}-){3}[a-z\d]{12}$
+      example: c9b8c4f2-6357-49d5-9ccc-55e8a01e4b2d
+    ImageSize:
+      type: integer
+      minimum: 1
+      maximum: 5000
+    Name:
+      type: string
+      example: Крутое название
+      maxLength: 255
+    Description:
+      type: string
+      example: Длинное и очень крутое описание
+      maxLength: 255
+    ImageFile:
+      type: string
+      format: binary
+      description: Разрешены форматы jpeg, jpeg, png, webp, svg
+    ProjectInfo:
+      type: object
+      properties:
+        alias:
+          $ref: '#/components/schemas/Alias'
+        presetsLimit:
+          type: integer
+          example: 10
+        imagesLimit:
+          type: integer
+          example: 10
+        name:
+          $ref: '#/components/schemas/Name'
+        description:
+          $ref: '#/components/schemas/Description'
+      required:
+        - alias
+        - presetsLimit
+        - imagesLimit
+    ImageInfo:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUIDv4'
+        link:
+          type: string
+          example: https://resizer-image-server.onrender.com/test-project/6168635a-b8a4-4126-8f17-59cea67c1d3a/original
+        name:
+          $ref: '#/components/schemas/Name'
+        description:
+          $ref: '#/components/schemas/Description'
+      required:
+        - id
+        - link
+    PresetInfo:
+      type: object
+      properties:
+        alias:
+          $ref: '#/components/schemas/Alias'
+        size:
+          $ref: '#/components/schemas/ImageSize'
+        isHorizontal:
+          type: boolean
+        name:
+          $ref: '#/components/schemas/Name'
+        description:
+          $ref: '#/components/schemas/Description'
+      required:
+        - alias
+        - size
+        - isHorizontal
+    SetPresets:
+      type: array
+      items:
+        type: object
+        properties:
+          alias:
+            $ref: '#/components/schemas/Alias'
+          size:
+            $ref: '#/components/schemas/ImageSize'
+          isHorizontal:
+            type: boolean
+            default: true
+          name:
+            $ref: '#/components/schemas/Name'
+          description:
+            $ref: '#/components/schemas/Description'
+        required:
+          - alias
+          - size
+    UploadImageBody:
+        type: object
+        properties:
+          file:
+            $ref: '#/components/schemas/ImageFile'
+          name:
+            $ref: '#/components/schemas/Name'
+          description:
+            $ref: '#/components/schemas/Description'
+        required:
+          - file
+          
